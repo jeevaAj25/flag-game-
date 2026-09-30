@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" width="200" height="160">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF2A3"/>
+      <stop offset="35%" stop-color="#FFD700"/>
+      <stop offset="70%" stop-color="#FFA500"/>
+      <stop offset="100%" stop-color="#FF8C00"/>
+    </linearGradient>
+    <filter id="goldGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Crown Points -->
+  <path d="M 40 90 L 60 35 L 85 65 L 100 20 L 115 65 L 140 35 L 160 90 Z" 
+        fill="url(#goldGrad)" filter="url(#goldGlow)" stroke="#FFF" stroke-width="2"/>
+  
+  <!-- Crown Jewels -->
+  <circle cx="60" cy="35" r="5" fill="#FFF" filter="url(#goldGlow)"/>
+  <circle cx="100" cy="20" r="7" fill="#FF4444" stroke="#FFF" stroke-width="2" filter="url(#goldGlow)"/>
+  <circle cx="140" cy="35" r="5" fill="#FFF" filter="url(#goldGlow)"/>
+  
+  <!-- Laurel Wreath Leaves (Left) -->
+  <g fill="url(#goldGrad)" opacity="0.95">
+    <path d="M 35 110 C 15 90 20 60 30 50 C 35 65 30 90 35 110 Z"/>
+    <path d="M 25 125 C 5 110 10 85 20 75 C 25 90 20 110 25 125 Z"/>
+    <path d="M 25 140 C 10 135 15 115 22 105 C 28 120 22 135 25 140 Z"/>
+  </g>
+
+  <!-- Laurel Wreath Leaves (Right) -->
+  <g fill="url(#goldGrad)" opacity="0.95">
+    <path d="M 165 110 C 185 90 180 60 170 50 C 165 65 170 90 165 110 Z"/>
+    <path d="M 175 125 C 195 110 190 85 180 75 C 175 90 180 110 175 125 Z"/>
+    <path d="M 175 140 C 190 135 185 115 178 105 C 172 120 178 135 175 140 Z"/>
+  </g>
+
+  <!-- Crown Base Band -->
+  <path d="M 35 90 Q 100 105 165 90 L 160 102 Q 100 117 40 102 Z" fill="url(#goldGrad)" stroke="#B8860B" stroke-width="2"/>
+  <circle cx="70" cy="98" r="3" fill="#00E5FF"/>
+  <circle cx="100" cy="102" r="4" fill="#FF1744"/>
+  <circle cx="130" cy="98" r="3" fill="#00E5FF"/>
+
+  <!-- Shield / Crest with Rank 1 -->
+  <g transform="translate(100, 115)">
+    <circle cx="0" cy="0" r="18" fill="url(#goldGrad)" stroke="#FFFFFF" stroke-width="2.5" filter="url(#goldGlow)"/>
+    <circle cx="0" cy="0" r="14" fill="#B8860B"/>
+    <text x="0" y="7" font-family="'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="20" fill="#FFFFFF" text-anchor="middle" filter="drop-shadow(0px 2px 2px rgba(0,0,0,0.8))">1</text>
+  </g>
+</svg>

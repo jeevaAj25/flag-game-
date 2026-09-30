@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 150" width="180" height="150">
+  <defs>
+    <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="35%" stop-color="#E0E6ED"/>
+      <stop offset="70%" stop-color="#8FA3BF"/>
+      <stop offset="100%" stop-color="#5C7699"/>
+    </linearGradient>
+    <linearGradient id="blueGlowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E5FF"/>
+      <stop offset="100%" stop-color="#0077FF"/>
+    </linearGradient>
+    <filter id="silverGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Crown Points -->
+  <path d="M 38 85 L 56 40 L 78 65 L 90 28 L 102 65 L 124 40 L 142 85 Z" 
+        fill="url(#silverGrad)" filter="url(#silverGlow)" stroke="#FFF" stroke-width="1.8"/>
+  
+  <circle cx="56" cy="40" r="4.5" fill="#FFF"/>
+  <circle cx="90" cy="28" r="6" fill="#00E5FF" stroke="#FFF" stroke-width="1.8"/>
+  <circle cx="124" cy="40" r="4.5" fill="#FFF"/>
+  
+  <!-- Laurel Wreath (Left) -->
+  <g fill="url(#silverGrad)" opacity="0.9">
+    <path d="M 32 100 C 15 85 20 60 28 50 C 32 63 28 85 32 100 Z"/>
+    <path d="M 24 115 C 8 100 12 78 20 70 C 23 83 20 100 24 115 Z"/>
+  </g>
+
+  <!-- Laurel Wreath (Right) -->
+  <g fill="url(#silverGrad)" opacity="0.9">
+    <path d="M 148 100 C 165 85 160 60 152 50 C 148 63 152 85 148 100 Z"/>
+    <path d="M 156 115 C 172 100 168 78 160 70 C 157 83 160 100 156 115 Z"/>
+  </g>
+
+  <!-- Crown Base Band -->
+  <path d="M 35 85 Q 90 98 145 85 L 142 96 Q 90 108 38 96 Z" fill="url(#silverGrad)" stroke="#4A607A" stroke-width="1.5"/>
+
+  <!-- Shield Crest with Rank 2 -->
+  <g transform="translate(90, 108)">
+    <circle cx="0" cy="0" r="16" fill="url(#blueGlowGrad)" stroke="#FFFFFF" stroke-width="2.5" filter="url(#silverGlow)"/>
+    <text x="0" y="6" font-family="'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="18" fill="#FFFFFF" text-anchor="middle" filter="drop-shadow(0px 2px 2px rgba(0,0,0,0.8))">2</text>
+  </g>
+</svg>

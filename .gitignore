@@ -1,0 +1,33 @@
+# Node dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+
+# SQLite Database and WAL files
+data/*.db
+data/*.db-shm
+data/*.db-wal
+!data/.gitkeep
+
+# Operating System files
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# Logs
+*.log
+logs/
+
+# IDE / Editor configs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

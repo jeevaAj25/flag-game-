@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1080, height=1920, initial-scale=1.0">
+  <title>Live Flag Count Fight - Scoreboard Overlay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,700;0,800;0,900;1,800;1,900&family=Poppins:ital,wght@0,700;0,800;0,900;1,800;1,900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+  <div id="canvas" class="canvas">
+    
+    <!-- Ambient Background Glows -->
+    <div class="ambient-glow glow-top"></div>
+    <div class="ambient-glow glow-podium"></div>
+
+    <!-- 1. Header Banner -->
+    <header class="header-container">
+      <div class="header-banner">
+        <span class="star-icon">✦</span>
+        <h1 class="header-title">BOOST YOUR COUNTRY</h1>
+        <span class="star-icon">✦</span>
+      </div>
+    </header>
+
+    <!-- 2. Neon Action Boxes -->
+    <section class="action-boxes-container">
+      <!-- Superchat Box (Gold) -->
+      <div class="action-box box-gold">
+        <div class="box-icon-wrap">
+          <img src="/assets/icon_money.svg" class="action-box-icon" alt="Superchat">
+        </div>
+        <div class="box-content">
+          <div class="box-title">1$ Superchat / Gift</div>
+          <div class="box-reward reward-gold">+4000 Points</div>
+        </div>
+      </div>
+
+      <!-- Like & Subscribe Box (Cyan) -->
+      <div class="action-box box-cyan">
+        <div class="box-icon-wrap">
+          <img src="/assets/icon_bell.svg" class="action-box-icon" alt="Like & Subscribe">
+        </div>
+        <div class="box-content">
+          <div class="box-title">Like & Subscribe</div>
+          <div class="box-reward reward-cyan">+400 Points</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Live Activity Banner Strip (with Neon Pink Top Line & Neon Cyan Bottom Line) -->
+    <section class="activity-section">
+      <div id="activity-banner" class="activity-banner">
+        <span id="activity-level" class="badge-level">LIVE</span>
+        <span id="activity-user" class="activity-user">💬 Type country name in live chat to vote!</span>
+        <span id="activity-country" class="activity-country"></span>
+        <span id="activity-points" class="activity-points"></span>
+      </div>
+    </section>
+
+    <!-- 4. Superchat Members & Goal Panel -->
+    <section class="superchat-panel-container">
+      <!-- Panel Header Pills -->
+      <div class="panel-header-row">
+        <div class="pill-pill pill-superchat">
+          <img src="/assets/icon_members.svg" class="pill-icon-svg" alt="Members">
+          <span class="pill-text">SUPERCHAT MEMBERS</span>
+        </div>
+        <div class="pill-pill pill-goal">
+          <img src="/assets/icon_target.svg" class="pill-icon-svg" alt="Goal">
+          <span id="goal-text" class="pill-text">GOAL = $0.00/$50</span>
+          <div class="goal-progress-wrap">
+            <div id="goal-progress-bar" class="goal-progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top 2 Donors Row -->
+      <div class="donor-cards-row">
+        <!-- Donor #1 Card (Gold Frame) -->
+        <div id="donor-card-1" class="donor-card card-gold">
+          <div class="donor-avatar-container">
+            <div class="donor-frame-svg gold-frame-svg"></div>
+            <img id="donor-1-avatar" class="donor-avatar-img" src="/assets/avatar1.svg" alt="Avatar">
+            <img id="donor-1-flag" class="donor-mini-flag" src="" alt="Flag" style="display: none;">
+          </div>
+          <div class="donor-info">
+            <div id="donor-1-name" class="donor-name">Top Donor #1</div>
+            <div id="donor-1-country" class="donor-country">Awaiting Superchat</div>
+            <div id="donor-1-usd" class="donor-usd">10$</div>
+            <div id="donor-1-points" class="donor-points">= 40000 points</div>
+          </div>
+        </div>
+
+        <!-- Donor #2 Card (Cyan Frame) -->
+        <div id="donor-card-2" class="donor-card card-cyan">
+          <div class="donor-avatar-container">
+            <div class="donor-frame-svg cyan-frame-svg"></div>
+            <img id="donor-2-avatar" class="donor-avatar-img" src="/assets/avatar2.svg" alt="Avatar">
+            <img id="donor-2-flag" class="donor-mini-flag" src="" alt="Flag" style="display: none;">
+          </div>
+          <div class="donor-info">
+            <div id="donor-2-name" class="donor-name">Top Donor #2</div>
+            <div id="donor-2-country" class="donor-country">Awaiting Superchat</div>
+            <div id="donor-2-usd" class="donor-usd">10$</div>
+            <div id="donor-2-points" class="donor-points">= 40000 points</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Podium: Top 3 Countries -->
+    <section class="podium-container">
+      <!-- Rank #2 (Left, Silver/Blue) -->
+      <div id="podium-2" class="podium-item podium-second">
+        <div class="podium-crown-wrap">
+          <img src="/assets/crown_silver.svg" class="podium-crown-img" alt="Crown 2">
+        </div>
+        <div class="podium-flag-box">
+          <img id="podium-2-flag" src="/flags/gr.png" class="podium-flag-img" alt="Rank 2">
+        </div>
+        <div class="podium-score-pill score-pill-silver">
+          <span id="podium-2-score">0</span>
+        </div>
+      </div>
+
+      <!-- Rank #1 (Center, Gold, Largest) -->
+      <div id="podium-1" class="podium-item podium-first">
+        <div class="podium-crown-wrap">
+          <img src="/assets/crown_gold.svg" class="podium-crown-img" alt="Crown 1">
+        </div>
+        <div class="podium-flag-box center-flag-box">
+          <img id="podium-1-flag" src="/flags/id.png" class="podium-flag-img" alt="Rank 1">
+          <div id="podium-1-chatter" class="flag-faint-watermark"></div>
+          <!-- Sparkle & Coin particle emitter layer -->
+          <div id="podium-particles" class="particles-layer"></div>
+        </div>
+        <div class="podium-score-pill score-pill-gold">
+          <span id="podium-1-score">0</span>
+        </div>
+      </div>
+
+      <!-- Rank #3 (Right, Bronze/Orange) -->
+      <div id="podium-3" class="podium-item podium-third">
+        <div class="podium-crown-wrap">
+          <img src="/assets/crown_bronze.svg" class="podium-crown-img" alt="Crown 3">
+        </div>
+        <div class="podium-flag-box">
+          <img id="podium-3-flag" src="/flags/sa.png" class="podium-flag-img" alt="Rank 3">
+        </div>
+        <div class="podium-score-pill score-pill-bronze">
+          <span id="podium-3-score">0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Flag Grid (Rank 4 Downward) -->
+    <section class="grid-section">
+      <div id="flag-grid" class="flag-grid">
+        <!-- Dynamically populated 8-column flag tiles with FLIP animations -->
+      </div>
+    </section>
+
+    <!-- 7. Bottom Watermark & Brand Area -->
+    <footer id="watermark-area" class="watermark-container">
+      <span id="watermark-text" class="watermark-text">PRISM Live</span>
+    </footer>
+
+    <!-- 8. Round Winner Announcement Overlay (Modal) -->
+    <div id="winner-modal" class="winner-modal hidden">
+      <div class="winner-backdrop"></div>
+      <div class="winner-card">
+        <div class="winner-trophy">🏆</div>
+        <h2 class="winner-heading">ROUND WINNER!</h2>
+        <div class="winner-flag-wrap">
+          <img id="winner-flag" src="/flags/id.png" class="winner-flag-img" alt="Winner Flag">
+        </div>
+        <div id="winner-name" class="winner-country-name">INDONESIA</div>
+        <div id="winner-score" class="winner-final-score">51.7k Points</div>
+        <div id="winner-timer" class="winner-next-round">Next round starts in 30s...</div>
+      </div>
+    </div>
+
+    <!-- 9. Background Music Status / Interactive Toggle -->
+    <div id="bgm-widget" class="bgm-widget" title="Click to Play/Pause Music (70% Volume)">
+      <div class="bgm-bars">
+        <span class="bar bar-1"></span>
+        <span class="bar bar-2"></span>
+        <span class="bar bar-3"></span>
+      </div>
+      <span class="bgm-icon">🎵</span>
+      <span id="bgm-title-text" class="bgm-title">Alan Walker - The Spectre</span>
+      <span id="bgm-vol-text" class="bgm-vol-pill">70%</span>
+    </div>
+
+    <!-- Background Audio Element -->
+    <audio id="bgm-audio" src="/sounds/bgm.mp3" loop preload="auto"></audio>
+
+  </div>
+
+  <script src="overlay.js"></script>
+</body>
+</html>

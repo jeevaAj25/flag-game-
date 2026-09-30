@@ -1,0 +1,103 @@
+{
+  "server": {
+    "port": 3000
+  },
+  "points": {
+    "pointsPerUsd": 4000,
+    "pointsPerLike": 400,
+    "pointsPerSubscribe": 400,
+    "pointsPerChat": 1,
+    "pointsPerLevel": {
+      "1": 1,
+      "2": 5,
+      "3": 10,
+      "4": 15,
+      "5": 20,
+      "6": 30,
+      "7": 50,
+      "8": 75,
+      "9": 100,
+      "10": 150
+    }
+  },
+  "levels": {
+    "thresholds": [
+      {
+        "level": 10,
+        "points": 20000
+      },
+      {
+        "level": 9,
+        "points": 10000
+      },
+      {
+        "level": 8,
+        "points": 5000
+      },
+      {
+        "level": 7,
+        "points": 3000
+      },
+      {
+        "level": 6,
+        "points": 1500
+      },
+      {
+        "level": 5,
+        "points": 500
+      },
+      {
+        "level": 4,
+        "points": 200
+      },
+      {
+        "level": 3,
+        "points": 50
+      },
+      {
+        "level": 2,
+        "points": 10
+      },
+      {
+        "level": 1,
+        "points": 0
+      }
+    ]
+  },
+  "audio": {
+    "bgmEnabled": true,
+    "bgmFile": "/sounds/bgm.mp3",
+    "bgmVolume": 0.7,
+    "bgmTrackName": "Alan Walker - The Spectre (Instrumental)"
+  },
+  "game": {
+    "likeMode": "active_split",
+    "chatCooldownMs": 3000,
+    "maxChatsPerMin": 20,
+    "goalAmount": 50,
+    "currentGoalAmount": 0,
+    "roundDurationMinutes": 0,
+    "watermarkText": "PRISM Live",
+    "watermarkEnabled": true
+  },
+  "youtube": {
+    "streamKey": "",
+    "rtmpUrl": "rtmp://a.rtmp.youtube.com/live2",
+    "videoId": "",
+    "liveChatId": "",
+    "apiKey": "",
+    "clientId": "",
+    "clientSecret": "",
+    "refreshToken": "",
+    "redirectUri": "http://localhost:3000/oauth2callback"
+  },
+  "stream": {
+    "fps": 30,
+    "bitrate": "4500k",
+    "width": 1080,
+    "height": 1920,
+    "chromePath": "",
+    "ffmpegPath": "ffmpeg",
+    "audioSource": "bgm"
+  }
+}

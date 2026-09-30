@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flag Fight Admin - Live Stream Control Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-wrapper">
+    <!-- Top Header -->
+    <header class="admin-header">
+      <div class="header-left">
+        <span class="logo-icon">🚩</span>
+        <h1>FLAG FIGHT <span>CONTROL CENTER</span></h1>
+      </div>
+      <div class="header-right">
+        <button id="btn-open-preview" class="btn-primary" onclick="window.open('/overlay', 'overlay_preview', 'width=460,height=820')">📺 Open Live Monitor (Preview)</button>
+        <div class="obs-link-box">
+          <span class="obs-label">OVERLAY URL:</span>
+          <input type="text" id="obs-url" value="http://localhost:3000/overlay" readonly>
+          <button id="btn-copy-obs" class="btn-secondary">Copy</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="admin-grid">
+      
+      <!-- Column 1: Stream & Round Controls -->
+      <section class="admin-card">
+        <div class="card-title">📡 RTMP Streaming Engine (Direct Mode)</div>
+        <div class="stream-status-box">
+          <div class="status-indicator">
+            <span id="stream-dot" class="dot dot-stopped"></span>
+            <span id="stream-text">Stream Stopped</span>
+          </div>
+          <div class="stream-stats">
+            <span>FPS: <strong id="stream-fps">0</strong></span>
+            <span>Uptime: <strong id="stream-uptime">0s</strong></span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>YouTube Stream Key:</label>
+          <input type="password" id="input-stream-key" placeholder="paste stream key here (e.g. xxxx-xxxx-xxxx-xxxx)">
+        </div>
+
+        <div class="form-group">
+          <label>YouTube Video ID (to read viewer chat live):</label>
+          <input type="text" id="input-video-id" placeholder="e.g. l2t_V1s2Bc (from youtube.com/watch?v=...)">
+        </div>
+
+        <div class="button-row">
+          <button id="btn-save-stream-config" class="btn-secondary">💾 Save Settings</button>
+          <button id="btn-start-stream" class="btn-success">🔴 GO LIVE NOW</button>
+          <button id="btn-stop-stream" class="btn-danger" disabled>⏹ Stop Stream</button>
+        </div>
+        <div class="card-note">
+          ⚡ <strong>Standalone Direct Streaming:</strong> No OBS needed! Click <strong>🔴 GO LIVE NOW</strong> and the app will capture the 1080x1920 30 fps scoreboard and push directly to YouTube live!
+        </div>
+
+        <hr class="divider">
+
+        <div class="card-title">⏱️ Round Timer & Winner</div>
+        <div class="timer-box">
+          <div class="timer-display" id="round-timer-display">NO ROUND ACTIVE</div>
+          <div class="timer-controls">
+            <input type="number" id="input-round-minutes" value="10" min="1" max="120" style="width: 70px;">
+            <span>mins</span>
+            <button id="btn-start-round" class="btn-primary">Start Round</button>
+            <button id="btn-end-round" class="btn-warning">End Round (Declare Winner)</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Column 2: Settings & Simulator -->
+      <section class="admin-card">
+        <div class="card-title">🧪 Live Simulator (Test Without YouTube)</div>
+        <div class="sim-banner">
+          <button id="btn-toggle-traffic" class="btn-traffic-start">▶ Start Auto Live Traffic</button>
+          <span id="traffic-status" class="traffic-idle">Simulator Idle</span>
+        </div>
+
+        <div class="sim-grid">
+          <button class="btn-sim" onclick="simulateChat('id')">🇮🇩 Chat Indonesia</button>
+          <button class="btn-sim" onclick="simulateChat('in')">🇮🇳 Chat India</button>
+          <button class="btn-sim" onclick="simulateChat('ph')">🇵🇭 Chat Philippines</button>
+          <button class="btn-sim" onclick="simulateChat('us')">🇺🇸 Chat USA</button>
+          <button class="btn-sim" onclick="simulateChat('sa')">🇸🇦 Chat Saudi</button>
+          <button class="btn-sim" onclick="simulateChat('gr')">🇬🇷 Chat Greece</button>
+          
+          <button class="btn-sim btn-gold" onclick="simulateSuperchat(2.67, 'sa')">💰 Superchat $2.67 (SA)</button>
+          <button class="btn-sim btn-gold" onclick="simulateSuperchat(5.00, 'in')">💰 Superchat $5.00 (IN)</button>
+          <button class="btn-sim btn-cyan" onclick="simulateLike(10)">👍 +10 Likes Batch</button>
+          <button class="btn-sim btn-cyan" onclick="simulateSubscribe()">🔔 New Subscriber</button>
+        </div>
+
+        <div style="margin-top: 14px; margin-bottom: 6px; font-weight: 700; font-size: 13px; color: #FFE600;">
+          ⭐ Test Level Points Progression (Level 1=1, Level 2=5, Level 3=10...):
+        </div>
+        <div class="sim-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 8px;">
+          <button class="btn-sim" onclick="simulateLevelChat('id', 1)">Lvl 1 (+1 pt)</button>
+          <button class="btn-sim" onclick="simulateLevelChat('in', 2)">Lvl 2 (+5 pts)</button>
+          <button class="btn-sim" onclick="simulateLevelChat('ph', 3)">Lvl 3 (+10 pts)</button>
+          <button class="btn-sim" onclick="simulateLevelChat('us', 4)">Lvl 4 (+15 pts)</button>
+          <button class="btn-sim" onclick="simulateLevelChat('sa', 5)">Lvl 5 (+20 pts)</button>
+          <button class="btn-sim" onclick="simulateLevelChat('id', 6)">Lvl 6 (+30 pts)</button>
+        </div>
+
+        <div style="margin-bottom: 12px; background: rgba(0, 229, 255, 0.08); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 8px; padding: 8px 12px; font-size: 11px; line-height: 1.5;">
+          <strong>🎯 Active Level Points Scaling:</strong><br>
+          <span style="color: #FFE600;">Level 1: 1 pt</span> &bull; 
+          <span style="color: #FFE600;">Level 2: 5 pts</span> &bull; 
+          <span style="color: #FFE600;">Level 3: 10 pts</span> &bull; 
+          <span style="color: #FFE600;">Level 4: 15 pts</span> &bull; 
+          <span style="color: #FFE600;">Level 5: 20 pts</span> &bull; 
+          <span style="color: #FFE600;">Level 6: 30 pts</span>
+        </div>
+
+        <hr class="divider">
+
+        <div class="card-title">🎵 Background Music (BGM)</div>
+        <div class="form-row" style="align-items: center; margin-bottom: 12px;">
+          <div class="form-group flex-2">
+            <label>Track: <strong style="color: #00E5FF;">Alan Walker - The Spectre (Instrumental)</strong></label>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 6px;">
+              <span style="font-size: 12px; color: #aaa;">Volume:</span>
+              <input type="range" id="input-bgm-volume" min="0" max="100" value="70" style="flex: 1; cursor: pointer;">
+              <span id="label-bgm-volume" style="font-weight: 800; color: #00E5FF; min-width: 42px;">70%</span>
+            </div>
+          </div>
+          <div class="form-group flex-1">
+            <label>Status:</label>
+            <select id="select-bgm-enabled">
+              <option value="true">Active (Playing)</option>
+              <option value="false">Muted / Paused</option>
+            </select>
+          </div>
+          <button id="btn-save-bgm" class="btn-secondary align-bottom">Save Audio</button>
+        </div>
+
+        <hr class="divider">
+
+        <div class="card-title">⚙️ Game & Overlay Settings</div>
+        
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Current Raised ($):</label>
+            <input type="number" id="input-goal-current" step="0.01" value="0.00">
+          </div>
+          <div class="form-group flex-1">
+            <label>Goal Target ($):</label>
+            <input type="number" id="input-goal-target" step="1" value="50">
+          </div>
+          <button id="btn-save-goal" class="btn-secondary align-bottom">Save Goal</button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-2">
+            <label>Watermark Text:</label>
+            <input type="text" id="input-watermark-text" value="PRISM Live">
+          </div>
+          <div class="form-group flex-1">
+            <label>Show:</label>
+            <select id="select-watermark-enabled">
+              <option value="true">Enabled</option>
+              <option value="false">Hidden</option>
+            </select>
+          </div>
+          <button id="btn-save-watermark" class="btn-secondary align-bottom">Save</button>
+        </div>
+      </section>
+
+      <!-- Column 3: Live Country Leaderboard & Score Editor -->
+      <section class="admin-card card-tall">
+        <div class="card-header-flex">
+          <div class="card-title">🏆 Country Scores & Manual Boosts</div>
+          <button id="btn-reset-scores" class="btn-danger-outline">Reset All Scores</button>
+        </div>
+
+        <div class="search-box">
+          <input type="text" id="country-search" placeholder="🔍 Search country (e.g. Indonesia, India, USA)...">
+        </div>
+
+        <div class="country-table-container">
+          <table class="country-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Country</th>
+                <th>Score</th>
+                <th>Quick Actions</th>
+              </tr>
+            </thead>
+            <tbody id="country-table-body">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Event Log -->
+    <footer class="admin-footer-log">
+      <div class="log-title">📜 Real-time Event Feed</div>
+      <div id="event-log-container" class="log-container">
+        <!-- Event stream items -->
+      </div>
+    </footer>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
