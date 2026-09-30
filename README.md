@@ -186,3 +186,5 @@ flaggamess/
   The streamer automatically detects standard Windows Google Chrome and Microsoft Edge paths. You can also customize `"chromePath"` in `config.json`.
 - **FFmpeg not found?**
   Ensure `ffmpeg` is added to your Windows system PATH (can be tested by running `ffmpeg -version` in PowerShell).
+#   f l a g - g a m e -  
+ 
