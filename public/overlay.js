@@ -56,7 +56,27 @@ function playSuperchatFanfare() {
   } catch (e) {}
 }
 
-// Background Music (BGM) Controller (70% Volume, Alan Walker - The Spectre)
+function playBoostFanfare() {
+  initAudio();
+  if (!audioCtx) return;
+  try {
+    const now = audioCtx.currentTime;
+    [440.00, 554.37, 659.25, 880.00, 1108.73, 1318.51].forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, now + i * 0.07);
+      gain.gain.setValueAtTime(0.2, now + i * 0.07);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.07 + 0.35);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now + i * 0.07);
+      osc.stop(now + i * 0.07 + 0.35);
+    });
+  } catch (e) {}
+}
+
+// Background Music (BGM) Controller (Extan - I Want To Live)
 let bgmAudio = null;
 let bgmVolume = 0.7; // 70% sound
 let bgmEnabled = true;
@@ -64,6 +84,16 @@ let bgmEnabled = true;
 function initBgm(audioSettings) {
   if (!bgmAudio) {
     bgmAudio = document.getElementById('bgm-audio');
+  }
+  if (bgmAudio && !bgmAudio._hasLoopHandler) {
+    bgmAudio._hasLoopHandler = true;
+    bgmAudio.loop = true;
+    bgmAudio.addEventListener('ended', () => {
+      if (bgmEnabled && bgmAudio) {
+        bgmAudio.currentTime = 0;
+        bgmAudio.play().catch(() => {});
+      }
+    });
   }
   if (audioSettings) {
     if (audioSettings.bgmVolume !== undefined) bgmVolume = parseFloat(audioSettings.bgmVolume);
@@ -75,6 +105,7 @@ function initBgm(audioSettings) {
   }
   if (bgmAudio) {
     bgmAudio.volume = bgmVolume;
+    bgmAudio.loop = true;
     const volEl = document.getElementById('bgm-vol-text');
     if (volEl && bgmEnabled) volEl.textContent = Math.round(bgmVolume * 100) + '%';
     if (bgmEnabled) {
@@ -89,6 +120,7 @@ function playBgm() {
   if (!bgmAudio) bgmAudio = document.getElementById('bgm-audio');
   if (!bgmAudio || !bgmEnabled) return;
   bgmAudio.volume = bgmVolume;
+  bgmAudio.loop = true;
   bgmAudio.play().then(() => {
     updateBgmWidget(true);
   }).catch((err) => {
@@ -224,13 +256,17 @@ function connectWebSocket() {
   };
 }
 
+let currentBoostState = { active: false, multiplier: 1 };
+
 function handleMessage(msg) {
   switch (msg.type) {
     case 'INIT':
       countriesData = msg.data.countries || [];
       topDonorsData = msg.data.topDonors || [];
       goalData = msg.data.goal || goalData;
-      updateSettings(msg.data.settings);
+      if (msg.data.boost) {
+        handleBoostStatus(msg.data.boost);
+      }
       if (msg.data.audio) {
         initBgm(msg.data.audio);
       }
@@ -238,6 +274,10 @@ function handleMessage(msg) {
       if (msg.data.round && msg.data.round.winner) {
         showWinner(msg.data.round.winner);
       }
+      break;
+
+    case 'BOOST_STATUS':
+      handleBoostStatus(msg.data);
       break;
 
     case 'AUDIO_UPDATE':
@@ -262,27 +302,63 @@ function handleMessage(msg) {
       renderGoal();
       break;
 
-    case 'SETTINGS_UPDATE':
-      updateSettings(msg.data);
-      break;
-
     case 'ROUND_STATUS':
       handleRoundStatus(msg.data);
       break;
   }
 }
 
-function updateSettings(settings) {
-  if (!settings) return;
-  const wmArea = document.getElementById('watermark-area');
-  const wmText = document.getElementById('watermark-text');
-  if (wmArea && wmText) {
-    if (settings.watermarkEnabled !== undefined) {
-      wmArea.style.display = settings.watermarkEnabled ? 'block' : 'none';
+function handleBoostStatus(boost) {
+  if (!boost) return;
+  const wasActive = currentBoostState.active;
+  currentBoostState = boost;
+
+  const banner = document.getElementById('boost-banner');
+  const idleIndicator = document.getElementById('boost-idle-indicator');
+  const timerDisplay = document.getElementById('boost-timer-seconds');
+  const idleText = document.getElementById('boost-idle-text');
+
+  if (boost.active) {
+    if (banner) banner.classList.remove('boost-hidden');
+    if (idleIndicator) idleIndicator.style.display = 'none';
+
+    if (timerDisplay) {
+      const mins = Math.floor(boost.remainingSeconds / 60);
+      const secs = boost.remainingSeconds % 60;
+      timerDisplay.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
     }
-    if (settings.watermarkText) {
-      wmText.textContent = settings.watermarkText;
+
+    // Dynamic 2X reward labels on action boxes
+    const scReward = document.querySelector('.box-gold .box-reward');
+    if (scReward) scReward.textContent = '+8000 Points (2X!)';
+    const lsReward = document.querySelector('.box-cyan .box-reward');
+    if (lsReward) lsReward.textContent = '+800 Points (2X!)';
+
+    document.querySelectorAll('.action-box').forEach(box => box.classList.add('boost-box-active'));
+
+    if (!wasActive) {
+      playBoostFanfare();
+      spawnPodiumSparkles();
     }
+  } else {
+    if (banner) banner.classList.add('boost-hidden');
+    if (idleIndicator) {
+      idleIndicator.style.display = 'inline-flex';
+      if (idleText) {
+        const nextSecs = Math.max(0, boost.nextBoostSeconds || 0);
+        const mins = Math.floor(nextSecs / 60);
+        const secs = nextSecs % 60;
+        idleText.textContent = `2X Boost in ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }
+    }
+
+    // Reset action box rewards
+    const scReward = document.querySelector('.box-gold .box-reward');
+    if (scReward) scReward.textContent = '+4000 Points';
+    const lsReward = document.querySelector('.box-cyan .box-reward');
+    if (lsReward) lsReward.textContent = '+400 Points';
+
+    document.querySelectorAll('.action-box').forEach(box => box.classList.remove('boost-box-active'));
   }
 }
 
@@ -484,30 +560,48 @@ function displayNextEvent() {
   const pointsEl = document.getElementById('activity-points');
 
   // Configure text according to event type
-  if (evt.type === 'like') {
+  if (evt.type === 'boost_start' || evt.type === 'boost') {
+    levelEl.textContent = '2X BOOST';
+    levelEl.style.color = '#FF1744';
+    userEl.textContent = '⚡ 2X BOOST ACTIVE ⚡';
+    countryEl.textContent = evt.country || 'ALL COUNTRIES';
+    pointsEl.textContent = '2X MULTIPLIER';
+    pointsEl.className = 'activity-points bonus';
+    playBoostFanfare();
+    spawnPodiumSparkles();
+  } else if (evt.type === 'boost_end') {
+    levelEl.textContent = 'NORMAL';
+    levelEl.style.color = '#B0BEC5';
+    userEl.textContent = 'Boost Ended';
+    countryEl.textContent = 'All Points Normal';
+    pointsEl.textContent = '1X';
+    pointsEl.className = 'activity-points';
+  } else if (evt.type === 'like') {
     levelEl.textContent = 'LIKE';
     levelEl.style.color = '#00E5FF';
     userEl.textContent = 'Stream Likes';
     countryEl.textContent = evt.country;
-    pointsEl.textContent = `+${evt.points}`;
+    pointsEl.textContent = evt.is2x ? `+${evt.points} (2X!)` : `+${evt.points}`;
     pointsEl.className = 'activity-points bonus';
   } else if (evt.type === 'superchat') {
     levelEl.textContent = 'SUPERCHAT';
     levelEl.style.color = '#FFE600';
     userEl.textContent = evt.user;
     countryEl.textContent = evt.country;
-    pointsEl.textContent = `+${evt.points.toLocaleString()} ($${evt.usd.toFixed(2)})`;
+    const boostTag = evt.is2x ? ' [2X!]' : '';
+    pointsEl.textContent = `+${evt.points.toLocaleString()} ($${evt.usd.toFixed(2)})${boostTag}`;
     pointsEl.className = 'activity-points bonus';
     playSuperchatFanfare();
     spawnPodiumSparkles();
   } else {
     // Normal chat or bonus
-    levelEl.textContent = `Level ${evt.level || 1}`;
-    levelEl.style.color = '#FFE600';
+    levelEl.textContent = evt.is2x ? '⚡ 2X VOTE' : `Level ${evt.level || 1}`;
+    levelEl.style.color = evt.is2x ? '#FF1744' : '#FFE600';
     userEl.textContent = evt.user;
     countryEl.textContent = evt.country;
-    if (evt.isBonus) {
-      pointsEl.textContent = `BONUS +${evt.points}`;
+    const boostSuffix = evt.is2x ? ' (2X!)' : '';
+    if (evt.isBonus || evt.is2x) {
+      pointsEl.textContent = `BONUS +${evt.points}${boostSuffix}`;
       pointsEl.className = 'activity-points bonus';
     } else {
       pointsEl.textContent = `+${evt.points}`;

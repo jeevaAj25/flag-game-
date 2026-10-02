@@ -5,9 +5,10 @@ const { detectCountry } = require('./countries');
 const db = require('./db');
 
 class Simulator {
-  constructor(config, eventEmitter) {
+  constructor(config, eventEmitter, options = {}) {
     this.config = config;
     this.emitter = eventEmitter;
+    this.getMultiplier = typeof options.getMultiplier === 'function' ? options.getMultiplier : (() => 1);
     this.isRunning = false;
     this.timer = null;
 
@@ -44,7 +45,8 @@ class Simulator {
 
     const chatResult = db.recordUserChat(channelId, userObj.name, userObj.avatar, country.code, 500, 100);
 
-    const pointsToAdd = chatResult.pointsEarned;
+    const multiplier = this.getMultiplier ? this.getMultiplier() : 1;
+    const pointsToAdd = chatResult.pointsEarned * multiplier;
 
     db.addPoints(country.code, pointsToAdd, userObj.name, true);
 
@@ -56,7 +58,9 @@ class Simulator {
       code: country.code,
       points: pointsToAdd,
       avatar: userObj.avatar,
-      isBonus: pointsToAdd > 1
+      isBonus: pointsToAdd > 1,
+      is2x: multiplier > 1,
+      multiplier: multiplier
     });
 
     this.emitter.emit('scores_update', db.getCountries());
@@ -69,7 +73,8 @@ class Simulator {
     const cCode = country ? country.code : 'sa';
 
     const pointsPerUsd = this.config.points?.pointsPerUsd || 4000;
-    const points = Math.round(usd * pointsPerUsd);
+    const multiplier = this.getMultiplier ? this.getMultiplier() : 1;
+    const points = Math.round(usd * pointsPerUsd) * multiplier;
     const channelId = 'sim_donor_' + userObj.name.replace(/[^a-zA-Z0-9]/g, '');
 
     db.addPoints(cCode, points, userObj.name, true);
@@ -92,7 +97,9 @@ class Simulator {
       points: points,
       usd: usd,
       avatar: userObj.avatar,
-      isBonus: true
+      isBonus: true,
+      is2x: multiplier > 1,
+      multiplier: multiplier
     });
 
     this.emitter.emit('superchat_update', topDonors);
@@ -101,7 +108,8 @@ class Simulator {
 
   simulateLike(count = 1) {
     const pointsPerLike = this.config.points?.pointsPerLike || 400;
-    const totalPoints = count * pointsPerLike;
+    const multiplier = this.getMultiplier ? this.getMultiplier() : 1;
+    const totalPoints = count * pointsPerLike * multiplier;
 
     const likeMode = this.config.game?.likeMode || 'active_split';
     let targetCountry = null;
@@ -127,7 +135,9 @@ class Simulator {
       country: targetCountry.name,
       code: targetCountry.code,
       points: totalPoints,
-      isBonus: true
+      isBonus: true,
+      is2x: multiplier > 1,
+      multiplier: multiplier
     });
 
     this.emitter.emit('scores_update', db.getCountries());
@@ -136,7 +146,8 @@ class Simulator {
   simulateSubscribe(customUser = null) {
     const userObj = customUser || this.sampleUsers[Math.floor(Math.random() * this.sampleUsers.length)];
     const country = db.getCountry(userObj.defaultCountry) || { code: 'id', name: 'Indonesia' };
-    const points = this.config.points?.pointsPerSubscribe || 400;
+    const multiplier = this.getMultiplier ? this.getMultiplier() : 1;
+    const points = (this.config.points?.pointsPerSubscribe || 400) * multiplier;
 
     db.addPoints(country.code, points, userObj.name, true);
 
@@ -147,7 +158,9 @@ class Simulator {
       code: country.code,
       points: points,
       level: 2,
-      isBonus: true
+      isBonus: true,
+      is2x: multiplier > 1,
+      multiplier: multiplier
     });
 
     this.emitter.emit('scores_update', db.getCountries());

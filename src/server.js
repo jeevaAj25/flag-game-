@@ -11,6 +11,7 @@ const db = require('./db');
 const YouTubeService = require('./youtube');
 const Simulator = require('./simulator');
 const StreamerService = require('./streamer');
+const BoostManager = require('./boost');
 
 function createServer(configPath) {
   let config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -25,17 +26,6 @@ function createServer(configPath) {
   const wss = new WebSocket.Server({ server });
   const eventEmitter = new EventEmitter();
 
-  // Sub-services
-  const youtube = new YouTubeService(config, eventEmitter);
-  const simulator = new Simulator(config, eventEmitter);
-  const streamer = new StreamerService(config, eventEmitter);
-
-  // Round Timer State
-  let roundTimer = null;
-  let roundRemainingSeconds = 0;
-  let roundActive = false;
-  let currentWinner = null;
-
   function broadcast(data) {
     const json = JSON.stringify(data);
     wss.clients.forEach((client) => {
@@ -44,6 +34,24 @@ function createServer(configPath) {
       }
     });
   }
+
+  // Boost Manager (Automatic 2X Boost frenzy every 10 min)
+  const boost = new BoostManager(config, eventEmitter, broadcast);
+
+  // Sub-services with 2X boost multiplier
+  const youtube = new YouTubeService(config, eventEmitter, {
+    getMultiplier: () => boost.getMultiplier()
+  });
+  const simulator = new Simulator(config, eventEmitter, {
+    getMultiplier: () => boost.getMultiplier()
+  });
+  const streamer = new StreamerService(config, eventEmitter);
+
+  // Round Timer State
+  let roundTimer = null;
+  let roundRemainingSeconds = 0;
+  let roundActive = false;
+  let currentWinner = null;
 
   // Hook Event Emitters to WebSocket Broadcasts
   eventEmitter.on('event', (evt) => {
@@ -72,8 +80,6 @@ function createServer(configPath) {
   wss.on('connection', (ws) => {
     const currentGoalStr = db.getSetting('currentGoalAmount', String(config.game?.currentGoalAmount || '3.08'));
     const targetGoalStr = db.getSetting('goalAmount', String(config.game?.goalAmount || '50.00'));
-    const watermarkText = db.getSetting('watermarkText', config.game?.watermarkText || 'PRISM Live');
-    const watermarkEnabled = db.getSetting('watermarkEnabled', 'true') === 'true';
 
     ws.send(JSON.stringify({
       type: 'INIT',
@@ -84,16 +90,15 @@ function createServer(configPath) {
           current: parseFloat(currentGoalStr),
           target: parseFloat(targetGoalStr)
         },
+        boost: boost.getStatus(),
         settings: {
-          watermarkText,
-          watermarkEnabled,
           likeMode: config.game?.likeMode || 'active_split'
         },
         audio: {
           bgmEnabled: config.audio?.bgmEnabled !== false,
           bgmFile: config.audio?.bgmFile || '/sounds/bgm.mp3',
           bgmVolume: config.audio?.bgmVolume ?? 0.7,
-          bgmTrackName: config.audio?.bgmTrackName || 'Alan Walker - The Spectre (Instrumental)'
+          bgmTrackName: config.audio?.bgmTrackName || 'Extan - I Want To Live'
         },
         levels: {
           pointsPerLevel: config.points?.pointsPerLevel || { 1: 1, 2: 5, 3: 10, 4: 15, 5: 20 }
@@ -153,8 +158,6 @@ function createServer(configPath) {
   app.get('/api/state', (req, res) => {
     const currentGoalStr = db.getSetting('currentGoalAmount', String(config.game?.currentGoalAmount || '3.08'));
     const targetGoalStr = db.getSetting('goalAmount', String(config.game?.goalAmount || '50.00'));
-    const watermarkText = db.getSetting('watermarkText', config.game?.watermarkText || 'PRISM Live');
-    const watermarkEnabled = db.getSetting('watermarkEnabled', 'true') === 'true';
 
     res.json({
       countries: db.getCountries(),
@@ -163,16 +166,15 @@ function createServer(configPath) {
         current: parseFloat(currentGoalStr),
         target: parseFloat(targetGoalStr)
       },
+      boost: boost.getStatus(),
       settings: {
-        watermarkText,
-        watermarkEnabled,
         likeMode: config.game?.likeMode || 'active_split'
       },
       audio: {
         bgmEnabled: config.audio?.bgmEnabled !== false,
         bgmFile: config.audio?.bgmFile || '/sounds/bgm.mp3',
         bgmVolume: config.audio?.bgmVolume ?? 0.7,
-        bgmTrackName: config.audio?.bgmTrackName || 'Alan Walker - The Spectre (Instrumental)'
+        bgmTrackName: config.audio?.bgmTrackName || 'Extan - I Want To Live'
       },
       levels: {
         pointsPerLevel: config.points?.pointsPerLevel || { 1: 1, 2: 5, 3: 10, 4: 15, 5: 20 }
@@ -181,7 +183,14 @@ function createServer(configPath) {
       simulatorRunning: simulator.isRunning,
       youtube: {
         videoId: config.youtube?.videoId || '',
-        streamKey: config.youtube?.streamKey || ''
+        streamKey: config.youtube?.streamKey || '',
+        apiKey: config.youtube?.apiKey || '',
+        backupApiKey: config.youtube?.backupApiKey || '',
+        hasStreamKey: Boolean(config.youtube?.streamKey),
+        hasApiKey: Boolean(config.youtube?.apiKey),
+        hasBackupApiKey: Boolean(config.youtube?.backupApiKey),
+        activeKeyIndex: youtube?.activeKeyIndex || 1,
+        running: Boolean(youtube?.isRunning)
       },
       round: {
         active: roundActive,
@@ -192,11 +201,13 @@ function createServer(configPath) {
   });
 
   app.post('/api/admin/points', (req, res) => {
-    const { code, points, chatterName } = req.body;
+    const { code, points, chatterName, applyMultiplier } = req.body;
     if (!code || typeof points !== 'number') {
       return res.status(400).json({ error: 'Code and points required' });
     }
-    const result = db.addPoints(code, points, chatterName || 'Admin', Boolean(chatterName));
+    const mult = (applyMultiplier !== false && boost.active) ? boost.getMultiplier() : 1;
+    const finalPoints = points * mult;
+    const result = db.addPoints(code, finalPoints, chatterName || 'Admin', Boolean(chatterName));
     if (!result) return res.status(404).json({ error: 'Country not found' });
 
     eventEmitter.emit('event', {
@@ -205,11 +216,13 @@ function createServer(configPath) {
       level: 5,
       country: result.name,
       code: result.code,
-      points: points,
-      isBonus: Math.abs(points) > 10
+      points: finalPoints,
+      isBonus: Math.abs(finalPoints) > 10,
+      is2x: mult > 1,
+      multiplier: mult
     });
     eventEmitter.emit('scores_update', db.getCountries());
-    res.json({ success: true, country: result });
+    res.json({ success: true, country: result, points: finalPoints });
   });
 
   app.post('/api/admin/reset', (req, res) => {
@@ -236,19 +249,69 @@ function createServer(configPath) {
     res.json({ success: true });
   });
 
-  app.post('/api/admin/watermark', (req, res) => {
-    const { text, enabled } = req.body;
-    if (text !== undefined) db.setSetting('watermarkText', text);
-    if (enabled !== undefined) db.setSetting('watermarkEnabled', enabled ? 'true' : 'false');
+  // Boost Controls (2X boost every 10 min)
+  app.get('/api/admin/boost', (req, res) => {
+    res.json(boost.getStatus());
+  });
 
+  app.post('/api/admin/boost/trigger', (req, res) => {
+    const duration = parseInt(req.body.duration || boost.durationSeconds, 10);
+    boost.triggerBoost(duration);
+    res.json({ success: true, boost: boost.getStatus() });
+  });
+
+  app.post('/api/admin/boost/stop', (req, res) => {
+    boost.endBoost();
+    res.json({ success: true, boost: boost.getStatus() });
+  });
+
+  app.post('/api/admin/boost/config', (req, res) => {
+    const { intervalMinutes, durationSeconds, autoEnabled, multiplier } = req.body;
+    boost.updateConfig({ intervalMinutes, durationSeconds, autoEnabled, multiplier });
+    try {
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    } catch (e) {}
+    res.json({ success: true, boost: boost.getStatus() });
+  });
+
+  app.post('/api/admin/boost/double-scores', (req, res) => {
+    const updatedCountries = db.doubleAllScores();
+    broadcast({ type: 'SCORES_UPDATE', data: updatedCountries });
     broadcast({
-      type: 'SETTINGS_UPDATE',
+      type: 'ACTIVITY_EVENT',
       data: {
-        watermarkText: db.getSetting('watermarkText', 'PRISM Live'),
-        watermarkEnabled: db.getSetting('watermarkEnabled', 'true') === 'true'
+        type: 'boost',
+        user: 'ADMIN',
+        country: 'ALL COUNTRIES',
+        points: '2X SCORES DOUBLED',
+        isBonus: true,
+        is2x: true,
+        message: '💥 ALL COUNTRY SCORES HAVE BEEN DOUBLED (2X)! 💥'
       }
     });
-    res.json({ success: true });
+    res.json({ success: true, countries: updatedCountries });
+  });
+
+  // YouTube API Key tester (Primary or Backup)
+  app.post('/api/admin/youtube/test', async (req, res) => {
+    const isBackup = req.body.keyType === 'backup';
+    const key = req.body.apiKey || (isBackup ? config.youtube?.backupApiKey : config.youtube?.apiKey);
+    if (!key) {
+      return res.status(400).json({ error: `Please enter a YouTube ${isBackup ? 'Backup ' : 'Primary '}API Key to test` });
+    }
+    try {
+      const { google } = require('googleapis');
+      const yt = google.youtube({ version: 'v3', auth: key });
+      const videoId = req.body.videoId || config.youtube?.videoId || 'dQw4w9WgXcQ';
+      await yt.videos.list({
+        part: ['snippet'],
+        id: [videoId]
+      });
+      res.json({ success: true, message: `YouTube ${isBackup ? 'Backup ' : 'Primary '}API Key is valid and working!` });
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.message;
+      res.status(400).json({ success: false, error: msg });
+    }
   });
 
   // Round Management
@@ -359,7 +422,7 @@ function createServer(configPath) {
           bgmEnabled: config.audio.bgmEnabled,
           bgmVolume: config.audio.bgmVolume,
           bgmFile: config.audio.bgmFile || '/sounds/bgm.mp3',
-          bgmTrackName: config.audio.bgmTrackName || 'Alan Walker - The Spectre (Instrumental)'
+          bgmTrackName: config.audio.bgmTrackName || 'Extan - I Want To Live'
         }
       });
       res.json({ success: true, audio: config.audio });
@@ -370,10 +433,12 @@ function createServer(configPath) {
 
   // Update configuration endpoint
   app.post('/api/admin/config', (req, res) => {
-    const { streamKey, videoId, apiKey, fps, bitrate } = req.body;
-    if (streamKey !== undefined) config.youtube.streamKey = streamKey;
-    if (videoId !== undefined) config.youtube.videoId = videoId;
-    if (apiKey !== undefined) config.youtube.apiKey = apiKey;
+    const { streamKey, videoId, apiKey, backupApiKey, fps, bitrate } = req.body;
+    if (!config.youtube) config.youtube = {};
+    if (typeof streamKey === 'string' && streamKey.trim() !== '') config.youtube.streamKey = streamKey.trim();
+    if (typeof videoId === 'string') config.youtube.videoId = videoId.trim();
+    if (typeof apiKey === 'string' && apiKey.trim() !== '') config.youtube.apiKey = apiKey.trim();
+    if (typeof backupApiKey === 'string' && backupApiKey.trim() !== '') config.youtube.backupApiKey = backupApiKey.trim();
     if (fps !== undefined) config.stream.fps = parseInt(fps, 10) || 30;
     if (bitrate !== undefined) config.stream.bitrate = bitrate;
 
@@ -382,7 +447,30 @@ function createServer(configPath) {
       db.setConfig(config);
       youtube.updateConfig(config);
       streamer.config = config;
-      res.json({ success: true, config });
+
+      // If YouTube API Key & Video ID are provided, ensure YouTube poller is active
+      if ((config.youtube.apiKey || config.youtube.backupApiKey || config.youtube.clientId) && config.youtube.videoId) {
+        if (!youtube.isRunning) {
+          console.log('[App] Starting live YouTube polling with updated credentials...');
+          youtube.start();
+        }
+      }
+
+      res.json({
+        success: true,
+        message: 'Settings saved successfully',
+        youtube: {
+          videoId: config.youtube.videoId || '',
+          streamKey: config.youtube.streamKey || '',
+          apiKey: config.youtube.apiKey || '',
+          backupApiKey: config.youtube.backupApiKey || '',
+          hasStreamKey: Boolean(config.youtube.streamKey),
+          hasApiKey: Boolean(config.youtube.apiKey),
+          hasBackupApiKey: Boolean(config.youtube.backupApiKey),
+          activeKeyIndex: youtube?.activeKeyIndex || 1,
+          running: Boolean(youtube?.isRunning)
+        }
+      });
     } catch (e) {
       res.status(500).json({ error: 'Failed to write config: ' + e.message });
     }
@@ -423,7 +511,7 @@ function createServer(configPath) {
     res.json(streamer.getStatus());
   });
 
-  return { app, server, youtube, simulator, streamer, config };
+  return { app, server, youtube, simulator, streamer, boost, config };
 }
 
 module.exports = { createServer };

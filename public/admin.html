@@ -18,11 +18,11 @@
         <h1>FLAG FIGHT <span>CONTROL CENTER</span></h1>
       </div>
       <div class="header-right">
-        <button id="btn-open-preview" class="btn-primary" onclick="window.open('/overlay', 'overlay_preview', 'width=460,height=820')">📺 Open Live Monitor (Preview)</button>
+        <button type="button" id="btn-open-preview" class="btn-primary" onclick="window.open('/overlay', 'overlay_preview', 'width=460,height=820')">📺 Open Live Monitor (Preview)</button>
         <div class="obs-link-box">
           <span class="obs-label">OVERLAY URL:</span>
           <input type="text" id="obs-url" value="http://localhost:3000/overlay" readonly>
-          <button id="btn-copy-obs" class="btn-secondary">Copy</button>
+          <button type="button" id="btn-copy-obs" class="btn-secondary">Copy</button>
         </div>
       </div>
     </header>
@@ -54,11 +54,39 @@
           <input type="text" id="input-video-id" placeholder="e.g. l2t_V1s2Bc (from youtube.com/watch?v=...)">
         </div>
 
-        <div class="button-row">
-          <button id="btn-save-stream-config" class="btn-secondary">💾 Save Settings</button>
-          <button id="btn-start-stream" class="btn-success">🔴 GO LIVE NOW</button>
-          <button id="btn-stop-stream" class="btn-danger" disabled>⏹ Stop Stream</button>
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label style="margin-bottom: 0;">Primary YouTube Data API Key:</label>
+            <span id="badge-primary-key" style="font-size: 11px; font-weight: 700; color: #aaa;">Not set</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <input type="password" id="input-api-key" placeholder="AIzaSy... (paste Primary YouTube API Key)" style="flex: 1;">
+            <button type="button" id="btn-toggle-api-key" class="btn-secondary" style="padding: 0 12px;" title="Show/Hide Key">👁️</button>
+            <button type="button" id="btn-test-api-key" class="btn-secondary" style="padding: 0 12px; white-space: nowrap;">Test Primary</button>
+          </div>
         </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label style="margin-bottom: 0;">Backup YouTube Data API Key (Failover):</label>
+            <span id="badge-backup-key" style="font-size: 11px; font-weight: 700; color: #aaa;">Not set</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <input type="password" id="input-backup-api-key" placeholder="AIzaSy... (paste Backup YouTube API Key)" style="flex: 1;">
+            <button type="button" id="btn-toggle-backup-api-key" class="btn-secondary" style="padding: 0 12px;" title="Show/Hide Key">👁️</button>
+            <button type="button" id="btn-test-backup-api-key" class="btn-secondary" style="padding: 0 12px; white-space: nowrap;">Test Backup</button>
+          </div>
+          <div style="font-size: 11px; color: #888; margin-top: 4px;">
+            🛡️ <strong>Dual-Key Failover:</strong> If Primary hits the YouTube quota limit, the bot switches to Backup automatically without interrupting chat!
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button type="button" id="btn-save-stream-config" class="btn-secondary">💾 Save Settings</button>
+          <button type="button" id="btn-start-stream" class="btn-success" onclick="startStream(event)">🔴 GO LIVE NOW</button>
+          <button type="button" id="btn-stop-stream" class="btn-danger" onclick="stopStream(event)" disabled>⏹ Stop Stream</button>
+        </div>
+        <div id="save-stream-feedback" style="display: none; margin-top: 8px; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 700;"></div>
         <div class="card-note">
           ⚡ <strong>Standalone Direct Streaming:</strong> No OBS needed! Click <strong>🔴 GO LIVE NOW</strong> and the app will capture the 1080x1920 30 fps scoreboard and push directly to YouTube live!
         </div>
@@ -71,8 +99,49 @@
           <div class="timer-controls">
             <input type="number" id="input-round-minutes" value="10" min="1" max="120" style="width: 70px;">
             <span>mins</span>
-            <button id="btn-start-round" class="btn-primary">Start Round</button>
-            <button id="btn-end-round" class="btn-warning">End Round (Declare Winner)</button>
+            <button type="button" id="btn-start-round" class="btn-primary">Start Round</button>
+            <button type="button" id="btn-end-round" class="btn-warning">End Round (Declare Winner)</button>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="card-title">⚡ 2X Boost Frenzy (Every 10 Mins)</div>
+        <div class="timer-box" style="background: rgba(255, 136, 0, 0.08); border: 1px solid rgba(255, 170, 0, 0.3);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span id="admin-boost-badge" style="font-weight: 800; font-size: 14px; color: #FFE600;">⏳ Next 2X Boost in: 10:00</span>
+            <span id="admin-boost-multiplier" style="background: #FFE600; color: #000; font-weight: 900; padding: 2px 10px; border-radius: 8px; font-size: 13px;">1X</span>
+          </div>
+
+          <div class="button-row" style="margin-bottom: 10px;">
+            <button type="button" id="btn-trigger-boost" class="btn-sim btn-gold" style="flex: 2; font-weight: 800; font-size: 13px;">⚡ Trigger 2X Boost Now</button>
+            <button type="button" id="btn-stop-boost" class="btn-danger" style="flex: 1;" disabled>⏹ End Boost</button>
+            <button type="button" id="btn-double-scores" class="btn-secondary" style="flex: 1.5; font-size: 12px;" title="Double all current accumulated scores">💥 2x Scores</button>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: flex-end; font-size: 12px;">
+            <div style="flex: 1;">
+              <label style="font-size: 11px; color: #aaa; display: block; margin-bottom: 4px;">Interval:</label>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <input type="number" id="input-boost-interval" value="10" min="1" max="120" style="width: 55px; padding: 4px 6px;">
+                <span style="font-size: 11px; color: #888;">min</span>
+              </div>
+            </div>
+            <div style="flex: 1;">
+              <label style="font-size: 11px; color: #aaa; display: block; margin-bottom: 4px;">Duration:</label>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <input type="number" id="input-boost-duration" value="60" min="5" max="600" style="width: 55px; padding: 4px 6px;">
+                <span style="font-size: 11px; color: #888;">sec</span>
+              </div>
+            </div>
+            <div style="flex: 1;">
+              <label style="font-size: 11px; color: #aaa; display: block; margin-bottom: 4px;">Auto 2X:</label>
+              <select id="select-boost-auto" style="padding: 4px 6px; font-size: 12px; width: 100%;">
+                <option value="true">Enabled</option>
+                <option value="false">Manual</option>
+              </select>
+            </div>
+            <button type="button" id="btn-save-boost-config" class="btn-secondary" style="padding: 6px 12px; height: 32px;">Save</button>
           </div>
         </div>
       </section>
@@ -81,34 +150,34 @@
       <section class="admin-card">
         <div class="card-title">🧪 Live Simulator (Test Without YouTube)</div>
         <div class="sim-banner">
-          <button id="btn-toggle-traffic" class="btn-traffic-start">▶ Start Auto Live Traffic</button>
+          <button type="button" id="btn-toggle-traffic" class="btn-traffic-start">▶ Start Auto Live Traffic</button>
           <span id="traffic-status" class="traffic-idle">Simulator Idle</span>
         </div>
 
         <div class="sim-grid">
-          <button class="btn-sim" onclick="simulateChat('id')">🇮🇩 Chat Indonesia</button>
-          <button class="btn-sim" onclick="simulateChat('in')">🇮🇳 Chat India</button>
-          <button class="btn-sim" onclick="simulateChat('ph')">🇵🇭 Chat Philippines</button>
-          <button class="btn-sim" onclick="simulateChat('us')">🇺🇸 Chat USA</button>
-          <button class="btn-sim" onclick="simulateChat('sa')">🇸🇦 Chat Saudi</button>
-          <button class="btn-sim" onclick="simulateChat('gr')">🇬🇷 Chat Greece</button>
+          <button type="button" class="btn-sim" onclick="simulateChat('id')">🇮🇩 Chat Indonesia</button>
+          <button type="button" class="btn-sim" onclick="simulateChat('in')">🇮🇳 Chat India</button>
+          <button type="button" class="btn-sim" onclick="simulateChat('ph')">🇵🇭 Chat Philippines</button>
+          <button type="button" class="btn-sim" onclick="simulateChat('us')">🇺🇸 Chat USA</button>
+          <button type="button" class="btn-sim" onclick="simulateChat('sa')">🇸🇦 Chat Saudi</button>
+          <button type="button" class="btn-sim" onclick="simulateChat('gr')">🇬🇷 Chat Greece</button>
           
-          <button class="btn-sim btn-gold" onclick="simulateSuperchat(2.67, 'sa')">💰 Superchat $2.67 (SA)</button>
-          <button class="btn-sim btn-gold" onclick="simulateSuperchat(5.00, 'in')">💰 Superchat $5.00 (IN)</button>
-          <button class="btn-sim btn-cyan" onclick="simulateLike(10)">👍 +10 Likes Batch</button>
-          <button class="btn-sim btn-cyan" onclick="simulateSubscribe()">🔔 New Subscriber</button>
+          <button type="button" class="btn-sim btn-gold" onclick="simulateSuperchat(2.67, 'sa')">💰 Superchat $2.67 (SA)</button>
+          <button type="button" class="btn-sim btn-gold" onclick="simulateSuperchat(5.00, 'in')">💰 Superchat $5.00 (IN)</button>
+          <button type="button" class="btn-sim btn-cyan" onclick="simulateLike(10)">👍 +10 Likes Batch</button>
+          <button type="button" class="btn-sim btn-cyan" onclick="simulateSubscribe()">🔔 New Subscriber</button>
         </div>
 
         <div style="margin-top: 14px; margin-bottom: 6px; font-weight: 700; font-size: 13px; color: #FFE600;">
           ⭐ Test Level Points Progression (Level 1=1, Level 2=5, Level 3=10...):
         </div>
         <div class="sim-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 8px;">
-          <button class="btn-sim" onclick="simulateLevelChat('id', 1)">Lvl 1 (+1 pt)</button>
-          <button class="btn-sim" onclick="simulateLevelChat('in', 2)">Lvl 2 (+5 pts)</button>
-          <button class="btn-sim" onclick="simulateLevelChat('ph', 3)">Lvl 3 (+10 pts)</button>
-          <button class="btn-sim" onclick="simulateLevelChat('us', 4)">Lvl 4 (+15 pts)</button>
-          <button class="btn-sim" onclick="simulateLevelChat('sa', 5)">Lvl 5 (+20 pts)</button>
-          <button class="btn-sim" onclick="simulateLevelChat('id', 6)">Lvl 6 (+30 pts)</button>
+          <button type="button" class="btn-sim" onclick="simulateLevelChat('id', 1)">Lvl 1 (+1 pt)</button>
+          <button type="button" class="btn-sim" onclick="simulateLevelChat('in', 2)">Lvl 2 (+5 pts)</button>
+          <button type="button" class="btn-sim" onclick="simulateLevelChat('ph', 3)">Lvl 3 (+10 pts)</button>
+          <button type="button" class="btn-sim" onclick="simulateLevelChat('us', 4)">Lvl 4 (+15 pts)</button>
+          <button type="button" class="btn-sim" onclick="simulateLevelChat('sa', 5)">Lvl 5 (+20 pts)</button>
+          <button type="button" class="btn-sim" onclick="simulateLevelChat('id', 6)">Lvl 6 (+30 pts)</button>
         </div>
 
         <div style="margin-bottom: 12px; background: rgba(0, 229, 255, 0.08); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 8px; padding: 8px 12px; font-size: 11px; line-height: 1.5;">
@@ -140,7 +209,7 @@
               <option value="false">Muted / Paused</option>
             </select>
           </div>
-          <button id="btn-save-bgm" class="btn-secondary align-bottom">Save Audio</button>
+          <button type="button" id="btn-save-bgm" class="btn-secondary align-bottom">Save Audio</button>
         </div>
 
         <hr class="divider">
@@ -156,22 +225,7 @@
             <label>Goal Target ($):</label>
             <input type="number" id="input-goal-target" step="1" value="50">
           </div>
-          <button id="btn-save-goal" class="btn-secondary align-bottom">Save Goal</button>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group flex-2">
-            <label>Watermark Text:</label>
-            <input type="text" id="input-watermark-text" value="PRISM Live">
-          </div>
-          <div class="form-group flex-1">
-            <label>Show:</label>
-            <select id="select-watermark-enabled">
-              <option value="true">Enabled</option>
-              <option value="false">Hidden</option>
-            </select>
-          </div>
-          <button id="btn-save-watermark" class="btn-secondary align-bottom">Save</button>
+          <button type="button" id="btn-save-goal" class="btn-secondary align-bottom">Save Goal</button>
         </div>
       </section>
 
@@ -179,7 +233,7 @@
       <section class="admin-card card-tall">
         <div class="card-header-flex">
           <div class="card-title">🏆 Country Scores & Manual Boosts</div>
-          <button id="btn-reset-scores" class="btn-danger-outline">Reset All Scores</button>
+          <button type="button" id="btn-reset-scores" class="btn-danger-outline">Reset All Scores</button>
         </div>
 
         <div class="search-box">

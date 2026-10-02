@@ -68,24 +68,27 @@
     "bgmEnabled": true,
     "bgmFile": "/sounds/bgm.mp3",
     "bgmVolume": 0.7,
-    "bgmTrackName": "Alan Walker - The Spectre (Instrumental)"
+    "bgmTrackName": "Extan - I Want To Live"
   },
   "game": {
     "likeMode": "active_split",
-    "chatCooldownMs": 3000,
-    "maxChatsPerMin": 20,
+    "chatCooldownMs": 0,
+    "maxChatsPerMin": 120,
     "goalAmount": 50,
     "currentGoalAmount": 0,
     "roundDurationMinutes": 0,
-    "watermarkText": "PRISM Live",
-    "watermarkEnabled": true
+    "boostIntervalMinutes": 10,
+    "boostDurationSeconds": 60,
+    "boostMultiplier": 2,
+    "boostAutoEnabled": true
   },
   "youtube": {
-    "streamKey": "",
+    "streamKey": "f2bg-quya-5ap2-y2zd-bc5f",
     "rtmpUrl": "rtmp://a.rtmp.youtube.com/live2",
-    "videoId": "",
+    "videoId": "NEW_TEST_VID",
     "liveChatId": "",
-    "apiKey": "",
+    "apiKey": "AIzaSyC7uENQatA6uZWeR6TGob8Yf7SFmDZeiaI",
+    "backupApiKey": "",
     "clientId": "",
     "clientSecret": "",
     "refreshToken": "",

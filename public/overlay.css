@@ -68,16 +68,18 @@ html, body {
 }
 
 /* =========================================
-   1. HEADER
+   1. HEADER & 2X BOOST
    ========================================= */
 .header-container {
   position: relative;
   z-index: 10;
-  padding-top: 32px;
-  padding-bottom: 10px;
+  padding-top: 26px;
+  padding-bottom: 6px;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 6px;
 }
 
 .header-banner {
@@ -100,6 +102,123 @@ html, body {
   letter-spacing: 2px;
   color: #FFE600;
   text-shadow: 0 0 18px rgba(255, 215, 0, 0.75), 0 3px 6px rgba(0, 0, 0, 0.9);
+}
+
+.boost-idle-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 136, 0, 0.15);
+  border: 1.5px solid rgba(255, 170, 0, 0.5);
+  border-radius: 20px;
+  padding: 4px 14px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 0 12px rgba(255, 136, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+.boost-idle-icon {
+  font-size: 14px;
+  color: #FFAA00;
+  filter: drop-shadow(0 0 6px #FFAA00);
+}
+
+.boost-idle-text {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #FFE600;
+  text-shadow: 0 0 8px rgba(255, 200, 0, 0.6);
+}
+
+/* Active 2X Frenzy Banner */
+.boost-banner {
+  position: relative;
+  z-index: 25;
+  margin: 6px 44px 10px 44px;
+  border-radius: 16px;
+  padding: 3px;
+  background: linear-gradient(90deg, #FF1744, #FF9100, #FFE600, #FF1744);
+  background-size: 300% 300%;
+  animation: boostGradientFlow 2.5s ease infinite, boostBannerPulse 1.2s ease-in-out infinite alternate;
+  box-shadow: 0 0 25px rgba(255, 80, 0, 0.7), 0 0 45px rgba(255, 230, 0, 0.4);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.boost-banner.boost-hidden {
+  display: none !important;
+}
+
+.boost-banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: radial-gradient(circle at center, #2a0808 0%, #150202 100%);
+  border-radius: 13px;
+  padding: 10px 20px;
+}
+
+.boost-fire-icon {
+  font-size: 34px;
+  animation: flameFlicker 0.6s infinite alternate;
+  filter: drop-shadow(0 0 10px #FF3D00);
+}
+
+.boost-title-wrap {
+  text-align: center;
+  flex: 1;
+}
+
+.boost-main-title {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #FFF;
+  text-shadow: 0 0 12px #FF1744, 0 0 24px #FF9100;
+  animation: textFlash 0.9s infinite alternate;
+}
+
+.boost-sub-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #FFE600;
+  text-shadow: 0 0 8px rgba(255, 230, 0, 0.8);
+}
+
+.boost-countdown-badge {
+  background: linear-gradient(135deg, #FF1744, #FF5252);
+  color: #FFF;
+  font-size: 22px;
+  font-weight: 900;
+  padding: 6px 14px;
+  border-radius: 10px;
+  box-shadow: 0 0 14px rgba(255, 23, 68, 0.8);
+  min-width: 68px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+@keyframes boostGradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes boostBannerPulse {
+  0% { transform: scale(0.99); filter: brightness(1); }
+  100% { transform: scale(1.02); filter: brightness(1.2); }
+}
+
+@keyframes flameFlicker {
+  0% { transform: scale(1) rotate(-3deg); }
+  100% { transform: scale(1.2) rotate(3deg); }
+}
+
+@keyframes textFlash {
+  0% { color: #FFFFFF; }
+  100% { color: #FFE600; }
 }
 
 /* =========================================
@@ -794,26 +913,6 @@ html, body {
 }
 
 /* =========================================
-   7. WATERMARK
-   ========================================= */
-.watermark-container {
-  position: absolute;
-  bottom: 24px;
-  right: 44px;
-  z-index: 20;
-  pointer-events: none;
-}
-
-.watermark-text {
-  font-size: 26px;
-  font-weight: 900;
-  font-style: italic;
-  color: rgba(255, 255, 255, 0.45);
-  letter-spacing: 2px;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
-}
-
-/* =========================================
    8. WINNER ANNOUNCEMENT MODAL
    ========================================= */
 .winner-modal {
@@ -916,19 +1015,8 @@ html, body {
 }
 
 /* =========================================
-   9. Background Music Widget & Watermark Footer
+   9. Background Music Widget
    ========================================= */
-.watermark-container {
-  position: absolute;
-  bottom: 24px;
-  right: 36px;
-  z-index: 50;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.45);
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-}
 
 .bgm-widget {
   position: absolute;

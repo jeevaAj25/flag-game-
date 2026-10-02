@@ -25,14 +25,16 @@ if (process.env.STREAM_KEY) config.youtube.streamKey = process.env.STREAM_KEY;
 if (process.env.YOUTUBE_VIDEO_ID) config.youtube.videoId = process.env.YOUTUBE_VIDEO_ID;
 if (process.env.YOUTUBE_LIVE_CHAT_ID) config.youtube.liveChatId = process.env.YOUTUBE_LIVE_CHAT_ID;
 if (process.env.YOUTUBE_API_KEY) config.youtube.apiKey = process.env.YOUTUBE_API_KEY;
+if (process.env.YOUTUBE_BACKUP_API_KEY) config.youtube.backupApiKey = process.env.YOUTUBE_BACKUP_API_KEY;
 if (process.env.GOOGLE_CLIENT_ID) config.youtube.clientId = process.env.GOOGLE_CLIENT_ID;
 if (process.env.GOOGLE_CLIENT_SECRET) config.youtube.clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 if (process.env.GOOGLE_REFRESH_TOKEN) config.youtube.refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
 if (process.env.LIKE_MODE) config.game.likeMode = process.env.LIKE_MODE;
-if (process.env.WATERMARK_TEXT) config.game.watermarkText = process.env.WATERMARK_TEXT;
+if (process.env.BOOST_INTERVAL_MINUTES) config.game.boostIntervalMinutes = parseInt(process.env.BOOST_INTERVAL_MINUTES, 10);
+if (process.env.BOOST_DURATION_SECONDS) config.game.boostDurationSeconds = parseInt(process.env.BOOST_DURATION_SECONDS, 10);
 
 const port = config.server.port || 3000;
-const { server, youtube, simulator, streamer } = createServer(CONFIG_PATH);
+const { server, youtube, simulator, streamer, boost } = createServer(CONFIG_PATH);
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
@@ -50,6 +52,7 @@ server.on('error', (err) => {
 const shutdown = async (signal) => {
   console.log(`\n[App] Received ${signal}. Shutting down cleanly...`);
   try {
+    if (boost && boost.stopTimer) boost.stopTimer();
     if (youtube && youtube.stop) youtube.stop();
     if (simulator && simulator.stopTraffic) simulator.stopTraffic();
     if (streamer && streamer.stopStream) await streamer.stopStream();
@@ -87,7 +90,8 @@ server.listen(port, () => {
   📡 YouTube Poller Status:
      Video ID:    ${config.youtube.videoId || '(not set - configure in Admin or config.json)'}
      Live Chat ID:${config.youtube.liveChatId || '(auto-resolves from Video ID)'}
-     API Key:     ${config.youtube.apiKey ? 'Configured (✓)' : '(not set)'}
+     Primary API Key: ${config.youtube.apiKey ? 'Configured (✓)' : '(not set)'}
+     Backup API Key:  ${config.youtube.backupApiKey ? 'Configured (✓)' : '(not set)'}
      OAuth2:      ${config.youtube.clientId ? 'Configured (✓)' : '(not set)'}
 
   🎥 Direct RTMP Streamer:
@@ -100,7 +104,7 @@ server.listen(port, () => {
   `);
 
   // Auto-start YouTube polling if credentials are provided
-  if (config.youtube.apiKey || config.youtube.clientId) {
+  if (config.youtube.apiKey || config.youtube.backupApiKey || config.youtube.clientId) {
     if (config.youtube.videoId || config.youtube.liveChatId) {
       console.log('[App] Starting live YouTube polling automatically...');
       youtube.start();

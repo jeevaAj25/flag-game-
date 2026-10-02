@@ -231,8 +231,8 @@ function recordUserChat(channelId, displayName, avatarUrl, countryCode, cooldown
     `).run(user);
   }
 
-  // Anti-spam check
-  if (now - user.last_chat_at < cooldownMs) {
+  // Anti-spam check (if cooldownMs configured > 0)
+  if (cooldownMs > 0 && now - user.last_chat_at < cooldownMs) {
     return { allowed: false, reason: 'cooldown', user, pointsEarned: 0 };
   }
 
@@ -383,6 +383,11 @@ function resetScores(seed = true) {
   }
 }
 
+function doubleAllScores() {
+  db.prepare('UPDATE countries SET score = score * 2 WHERE score > 0').run();
+  return getCountries();
+}
+
 function getSetting(key, defaultValue = '') {
   const row = db.prepare('SELECT value FROM game_settings WHERE key = ?').get(key);
   return row ? row.value : defaultValue;
@@ -437,6 +442,7 @@ module.exports = {
   markEventProcessed,
   getRecentCountryActivity,
   resetScores,
+  doubleAllScores,
   getSetting,
   setSetting,
   addPendingSubscriber,
